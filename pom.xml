@@ -7,6 +7,8 @@
     <groupId>com.herval</groupId>
     <artifactId>pss</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
     <modules>
         <module>search</module>
         <module>website</module>
