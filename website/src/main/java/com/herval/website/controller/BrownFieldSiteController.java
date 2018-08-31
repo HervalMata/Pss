@@ -3,6 +3,7 @@ package com.herval.website.controller;
 import com.herval.website.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -23,11 +24,8 @@ public class BrownFieldSiteController {
 
     private static final Logger logger = LoggerFactory.getLogger(BrownFieldSiteController.class);
 
-    RestTemplate searchClient = new RestTemplate();
-
-    RestTemplate bookingClient = new RestTemplate();
-
-    RestTemplate checkInClient = new RestTemplate();
+    @Autowired
+    private RestTemplate restTemplate;
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public String greetingForm(Model model){
@@ -40,7 +38,7 @@ public class BrownFieldSiteController {
 
     @RequestMapping(value = "/search", method = RequestMethod.POST)
     public String greetingSubmit(@ModelAttribute UIData uiData, Model model){
-        Flight[] flights = searchClient.postForObject("http://localhost:8083/search/get",
+        Flight[] flights = restTemplate.postForObject("http://localhost:8083/search/get",
                             uiData.getSearchQuery(), Flight[].class);
         uiData.setFlights(Arrays.asList(flights));
         model.addAttribute("uidata", uiData);
@@ -71,7 +69,7 @@ public class BrownFieldSiteController {
         booking.setPassengers(passengers);
         long bookingId = 0;
         try {
-            bookingId = bookingClient.patchForObject("http://localhost:8080/booking/create", booking, long.class);
+            bookingId = restTemplate.patchForObject("http://localhost:8080/booking/create", booking, long.class);
             logger.info("Booking crated " + bookingId);
         } catch (Exception e){
             logger.error("BOOKING SERVICE NOT AVAILABLE...!!!");
@@ -91,7 +89,7 @@ public class BrownFieldSiteController {
     @RequestMapping(value = "/search-booking-get", method = RequestMethod.POST)
     public String searchBookingSubmit(@ModelAttribute UIData uiData, Model model){
         Long id = new Long(uiData.getBookingId());
-        BookingRecord booking = bookingClient.getForObject("http://localhost:8080/booking/get/" + id, BookingRecord.class);
+        BookingRecord booking = restTemplate.getForObject("http://localhost:8080/booking/get/" + id, BookingRecord.class);
         Flight flight = new Flight(booking.getFlightNumber(), booking.getOrigin(), booking.getDestination(),
                         booking.getFlightDate(), new Fares(booking.getFare(), "AED"));
         Passenger pax = booking.getPassengers().iterator().next();
@@ -111,7 +109,7 @@ public class BrownFieldSiteController {
                             @PathVariable String lastName, @PathVariable String gender,
                             @PathVariable String bookingId, Model model){
         CheckInRecord checkIn = new CheckInRecord(firstName, lastName, "28c", null, flightDate, flightDate, new Long(bookingId).longValue());
-        long checkinId = checkInClient.postForObject("http://localhost:8081/checkin/create", checkIn, long.class);
+        long checkinId = restTemplate.postForObject("http://localhost:8081/checkin/create", checkIn, long.class);
         model.addAttribute("message", "Checked In, Seat Number is 28c , checkin id is " + checkinId);
         return "checkinconfirm";
     }
