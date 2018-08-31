@@ -10,6 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>book</module>
         <module>checkin</module>
         <module>fares</module>
         <module>search</module>
