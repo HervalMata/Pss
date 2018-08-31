@@ -12,6 +12,7 @@
     <modules>
         <module>book</module>
         <module>checkin</module>
+        <module>configserver</module>
         <module>fares</module>
         <module>search</module>
         <module>website</module>
