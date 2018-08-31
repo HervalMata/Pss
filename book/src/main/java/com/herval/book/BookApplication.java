@@ -12,19 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+@EnableDiscoveryClient
 @SpringBootApplication
+@EnableSwagger2
 public class BookApplication implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(BookApplication.class);
-
-    @Autowired
-    private BookingRepository bookingRepository;
 
     @Autowired
     private BookingComponent bookingComponent;

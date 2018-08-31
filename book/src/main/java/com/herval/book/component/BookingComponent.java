@@ -8,10 +8,9 @@ import com.herval.book.repository.InventoryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.netflix.feign.EnableFeignClients;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -21,6 +20,8 @@ import java.util.Set;
 /*
  * Criado Por Herval Mata em 30/08/2018
  */
+@EnableFeignClients
+@RefreshScope
 @Component
 public class BookingComponent {
 
@@ -29,21 +30,27 @@ public class BookingComponent {
 
     BookingRepository bookingRepository;
     InventoryRepository inventoryRepository;
+    FareServiceProxy fareServiceProxy;
 
-    private WebClient webClient;
     Sender sender;
 
+    public BookingComponent() {
+    }
+
     @Autowired
-    public BookingComponent(BookingRepository bookingRepository, InventoryRepository inventoryRepository, WebClient webClient, Sender sender) {
+    public BookingComponent(BookingRepository bookingRepository, InventoryRepository inventoryRepository, FareServiceProxy fareServiceProxy, Sender sender) {
         this.bookingRepository = bookingRepository;
         this.inventoryRepository = inventoryRepository;
-        this.webClient = webClient;
+        this.fareServiceProxy = fareServiceProxy;
         this.sender = sender;
     }
 
     public long book(BookingRecord record) {
         logger.info("calling fares to get fare");
-        validateFareReactively(record);
+        Fare fare = fareServiceProxy.getFare(record.getFlightNumber(), record.getFlightDate());
+        logger.info("calling fares to get fare " + fare);
+        if (!record.getFare().equals(fare.getFare()))
+            throw new BookingException("fare is tampered");
         logger.info("calling inventory to get inventory");
         Inventory inventory = inventoryRepository.findByFlightNumberAndFlightDate(record.getFlightNumber(), record.getFlightDate());
         if (!inventory.isAvailable(record.getPassangers().size())){
@@ -64,18 +71,10 @@ public class BookingComponent {
         Map<String, Object> bookingDetails = new HashMap<String, Object>();
         bookingDetails.put("FLIGHT_NUMBER", record.getFlightNumber());
         bookingDetails.put("FLIGHT_DATE", record.getFlightDate());
-        bookingDetails.put("NEW_INVENTORY", record.getBookableInventory());
+        bookingDetails.put("NEW_INVENTORY", inventory.getBookableInventory());
         sender.send(bookingDetails);
         logger.info("booking event successfully delivered " + bookingDetails);
         return id;
-    }
-
-    private void validateFareReactively(BookingRecord record) {
-        Mono<Fare> result = webClient.get().uri("/fares/get?flightNumber= " +
-                record.getFlightNumber() + " &flightDate = " + record.getFlightDate())
-                .accept(MediaType.APPLICATION_JSON).exchange().flatMap(response ->
-                        response.bodyToMono(Fare.class));
-        result.subscribe(fare -> checkFare(record.getFare(), fare.getFare()));
     }
 
     public BookingRecord getBooking(long id) {
@@ -84,11 +83,10 @@ public class BookingComponent {
 
     public void updateStatus(String status, long bookingId) {
         BookingRecord record = bookingRepository.findById(new Long(bookingId)).get();
-        record.setStatus(status);
-    }
-
-    private void checkFare(String requestedFare, String actualfare){
-        logger.info("calling fares to get fare (reactively collected) " + actualfare);
-        if (!requestedFare.equals(actualfare)) throw new BookingException("fare is tampered");
+        if (record == null){
+            logger.info("NO BOOKING FOUND, ignoring FOR BOOKING ID.." + bookingId);
+        } else {
+            record.setStatus(status);
+        }
     }
 }

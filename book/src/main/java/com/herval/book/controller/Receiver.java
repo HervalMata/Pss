@@ -4,6 +4,9 @@ import com.herval.book.component.BookingComponent;
 import com.herval.book.component.BookingStatus;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.Input;
+import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Component;
 
 /*
@@ -15,13 +18,19 @@ public class Receiver {
     BookingComponent bookingComponent;
 
     @Autowired
-    public Receiver(BookingComponent bookingComponent) {
-        this.bookingComponent = bookingComponent;
+    public Receiver() {
+
     }
 
-    @RabbitListener(queues = "CheckINQ")
-    public void processMessage(long bookingId){
-        System.out.println(bookingId);
+    @ServiceActivator(inputChannel = BookingSink.CHECKINQ)
+    public void accept(long bookingId){
         bookingComponent.updateStatus(BookingStatus.CHECKED_IN, bookingId);
     }
+
+    interface BookingSink {
+        public static String CHECKINQ = "checkInQ";
+        @Input("chevkInQ")
+        public MessageChannel checkInQ();
+    }
+
 }

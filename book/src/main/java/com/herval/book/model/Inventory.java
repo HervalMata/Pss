@@ -65,7 +65,11 @@ public class Inventory {
                 + available + "]";
     }
 
-    public boolean isAvailable(int size) {
-        return true;
+    public boolean isAvailable(int count) {
+        return ((available-count) >5);
+    }
+
+    public int getBookableInventory(){
+        return available - 5;
     }
 }

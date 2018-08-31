@@ -1,37 +1,36 @@
 package com.herval.book.component;
 
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.rabbit.core.RabbitMessagingTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.stream.annotation.EnableBinding;
+import org.springframework.cloud.stream.annotation.Output;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
 
 /*
  * Criado Por Herval Mata em 31/08/2018
  */
+@EnableBinding(Sender.BookingSource.class)
 @Component
+@RefreshScope
 public class Sender {
 
-    RabbitMessagingTemplate template;
+    public Sender() {
+    }
 
+    @Output(BookingSource.InventoryQ)
     @Autowired
-    public Sender(RabbitMessagingTemplate template) {
-        this.template = template;
-    }
-
-    @Bean
-    Queue queue(){
-        return new Queue("SearchQ", false);
-    }
-
-    @Bean
-    Queue queue1(){
-        return new Queue("CheckINhQ", false);
-    }
+    private MessageChannel messageChannel;
 
     public void send(Object message) {
-        template.convertAndSend("SearchQ", message);
+        messageChannel.send(MessageBuilder.withPayload(message).build());
+    }
+
+    interface BookingSource {
+        public static String InventoryQ = "inventoryQ";
+        @Output("inventoryQ")
+        public MessageChannel inventoryQ();
     }
 }
