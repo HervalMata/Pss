@@ -8,10 +8,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.Date;
 
 @SpringBootApplication
+@EnableDiscoveryClient
+@EnableSwagger2
 public class CheckinApplication implements CommandLineRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(CheckinApplication.class);
